@@ -1,5 +1,7 @@
+
 import mongoose from "mongoose";
 
+// Conectar a la base de datos
 async function connectToDatabase() {
     try {
         await mongoose.connect(
@@ -7,10 +9,10 @@ async function connectToDatabase() {
         );
         console.log("Conexión a la base de datos establecida");
 
-        //await insertarSuperheroe();
-        await actualizarSuperheroe("Ironman");
-        //await eliminarSuperheroe("Ironman");
-        //await buscarSuperheroes("Tierra");
+        //await insertSuperhero();
+        //await updateSuperhero("Ironman");
+        //await deleteSuperhero("Ironman");
+        await findSuperheros("Tierra");
     } catch (error) {
         console.error("Error al conectar a la base de datos:", error);
     }
@@ -18,8 +20,8 @@ async function connectToDatabase() {
 
 connectToDatabase();
 
-// Defnir un esquema para superheroes
-const superheroeSchema = new mongoose.Schema(
+// Definimos un esquema para estructurar la colección de superhéroes
+const superheroSchema = new mongoose.Schema(
     {
         nombreSuperheroe: { type: String, required: true },
         nombreReal: { type: String, required: true },
@@ -37,11 +39,14 @@ const superheroeSchema = new mongoose.Schema(
     },
 );
 
-// Crear un modelo a partir del esquema
-const Superheroe = mongoose.model("Superhero", superheroeSchema);
+// Creamos un modelo a partir del esquema para poder interactuar con la colección de superhéroes
+const Superhero = mongoose.model("Superhero", superheroSchema);
 
-async function insertarSuperheroe() {
-    const heroe = new Superheroe({
+// Desarrollamos los métodos CRUD para insertar, actualizar, eliminar y consultar superhéroes en la base de datos
+
+// método para insertar un nuevo superhéroe en la base de datos
+async function insertSuperhero() {
+    const heroe = new Superhero({
         nombreSuperheroe: "Ironman",
         nombreReal: "Tony Stark",
         edad: 45,
@@ -60,8 +65,9 @@ async function insertarSuperheroe() {
     console.log("Superhéroe insertado:", heroe);
 }
 
-async function actualizarSuperheroe(nombreSuperheroe) {
-    const resultado = await Superheroe.updateOne(
+// método para actualizar la edad de un superhéroe específico
+async function updateSuperhero(nombreSuperheroe) {
+    const resultado = await Superhero.updateOne(
         { nombreSuperheroe: nombreSuperheroe },
         { $set: { edad: 46 } },
     );
@@ -70,8 +76,9 @@ async function actualizarSuperheroe(nombreSuperheroe) {
     await mongoose.connection.close();
 }
 
-async function eliminarSuperheroe(nombreSuperheroe) {
-    const resultado = await Superheroe.deleteOne({
+// método para eliminar un superhéroe específico de la base de datos
+async function deleteSuperhero(nombreSuperheroe) {
+    const resultado = await Superhero.deleteOne({
         nombreSuperheroe: nombreSuperheroe,
     });
     console.log("Resultado de la eliminación:", resultado);
@@ -79,7 +86,8 @@ async function eliminarSuperheroe(nombreSuperheroe) {
     await mongoose.connection.close();
 }
 
-async function buscarSuperheroes(planetaOrigen) {
-    const heroes = await Superheroe.find({ planetaOrigen: planetaOrigen });
+// método para encontrar superhéroes por su planeta de origen
+async function findSuperheros(planetaOrigen) {
+    const heroes = await Superhero.find({ planetaOrigen: planetaOrigen });
     console.log("Superhéroes encontrados:", heroes);
 }
