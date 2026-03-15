@@ -1,14 +1,13 @@
-
 import mongoose from "mongoose";
+import { config } from "dotenv";
+config();
 
 // Conectar a la base de datos
 async function connectToDatabase() {
     try {
-        await mongoose.connect(
-            "mongodb://grupo-30:grupo-30@cluster0-shard-00-00.blryo.mongodb.net:27017,cluster0-shard-00-01.blryo.mongodb.net:27017,cluster0-shard-00-02.blryo.mongodb.net:27017/NodeMod3Cohorte5?ssl=true&replicaSet=atlas-10fu4i-shard-0&authSource=admin&retryWrites=true&w=majority",
-        );
-        console.log("Conexión a la base de datos establecida");
-
+        await mongoose.connect(process.env.MONGO_URI);
+        
+        console.log("Conexión a la base de datos exitosa");
         //await insertSuperhero();
         //await updateSuperhero("Ironman");
         //await deleteSuperhero("Ironman");
