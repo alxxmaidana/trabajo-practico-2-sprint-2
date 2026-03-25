@@ -1,92 +1,136 @@
 import mongoose from "mongoose";
-import { config } from "dotenv";
-config();
+import { setServers } from "node:dns/promises";
+setServers(["1.1.1.1", "8.8.8.8"]);
+import "dotenv/config";
 
-// Conectar a la base de datos
-async function connectToDatabase() {
+// Definir esquema para los superheroes
+const superheroSchema = new mongoose.Schema({
+    nombreSuperheroe: { type: String, required: true },
+    nombreReal: { type: String, required: true },
+    edad: { type: Number, min: 0 },
+    planetaOrigen: { type: String, default: "Desconocido" },
+    debilidad: String,
+    poderes: [String],
+    aliados: [String],
+    enemigos: [String],
+    createdAt: { type: Date, default: Date.now },
+    creador: String,
+});
+
+// Crear el modelo para implementar el esquma
+const Superhero = mongoose.model("Superhero", superheroSchema, "Grupo-30");
+
+async function InitApp() {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
-        
-        console.log("Conexión a la base de datos exitosa");
-        //await insertSuperhero();
-        //await updateSuperhero("Ironman");
-        //await deleteSuperhero("Ironman");
-        await findSuperheros("Tierra");
+        await connectToDb();
+        await findSuperheroByPlaneta("Asgard");
+        // await insertSuperhero();
+        // await updateSuperhero("Batman", { $set: { edad: 1001 } });
+        // await updateSuperhero("Thor", {
+        //     $push: { aliados: "Capitán América" },
+        // });
+        // await deleteSuperhero("Thor");
     } catch (error) {
-        console.error("Error al conectar a la base de datos:", error);
+        console.error("Hubo un error", error);
+        throw error;
+    } finally {
+        mongoose.connection.close();
+        console.log("Conexión a la base de datos cerrada");
     }
 }
 
-connectToDatabase();
+async function connectToDb() {
+    try {
+        await mongoose.connect(process.env.CONNECTION_STRING);
+        console.log("Conexión éxitos a la base de datos");
+    } catch (error) {
+        console.error("Error al conectar a la base de datos", error);
+        throw error;
+    }
+}
 
-// Definimos un esquema para estructurar la colección de superhéroes
-const superheroSchema = new mongoose.Schema(
-    {
-        nombreSuperheroe: { type: String, required: true },
-        nombreReal: { type: String, required: true },
-        edad: { type: Number, min: 0 },
-        planetaOrigen: { type: String, default: "Desconocido" },
-        debilidad: { type: String },
-        poderes: [String],
-        aliados: [String],
-        enemigos: [String],
-        createAt: { type: Date, default: Date.now },
-        creador: { type: String },
-    },
-    {
-        collection: "Grupo-30",
-    },
-);
-
-// Creamos un modelo a partir del esquema para poder interactuar con la colección de superhéroes
-const Superhero = mongoose.model("Superhero", superheroSchema);
-
-// Desarrollamos los métodos CRUD para insertar, actualizar, eliminar y consultar superhéroes en la base de datos
-
-// método para insertar un nuevo superhéroe en la base de datos
 async function insertSuperhero() {
-    const heroe = new Superhero({
-        nombreSuperheroe: "Ironman",
-        nombreReal: "Tony Stark",
-        edad: 45,
-        planetaOrigen: "Tierra",
-        debilidad: "Dependencia de su armadura",
-        poderes: [
-            "Inteligencia excepcional",
-            "Habilidades de ingeniería",
-            "Armadura avanzada",
-        ],
-        aliados: ["Spiderman", "Capitán América"],
-        enemigos: ["Thanos", "Mandarín"],
+    const hero = new Superhero({
+        nombreSuperheroe: "Thor",
+        nombreReal: "Thor Edinson",
+        edad: 1000,
+        planetaOrigen: "Asgard",
+        debilidad: "Destruir su martillo",
+        poderes: ["Controlar el trueno", "Fuerza sobrehumana", "Inmortal"],
+        aliados: ["Loki"],
+        enemigos: ["Hela"],
         creador: "Alexander Maidana",
     });
-    await heroe.save();
-    console.log("Superhéroe insertado:", heroe);
+
+    try {
+        await hero.save();
+        console.log("Superhéroe Insertado:", hero.nombreSuperheroe);
+    } catch (error) {
+        console.error("Error al guardar el superhéroe", error);
+        throw error;
+    }
 }
 
-// método para actualizar la edad de un superhéroe específico
-async function updateSuperhero(nombreSuperheroe) {
-    const resultado = await Superhero.updateOne(
-        { nombreSuperheroe: nombreSuperheroe },
-        { $set: { edad: 46 } },
-    );
-    console.log("Resultado de la actualización:", resultado);
-    // Aseguramos cerrar la conexión para que el cambio se refleje en la base de datos
-    await mongoose.connection.close();
+// Actualización de un sueperheore
+async function updateSuperhero(nombreSuperheroe, operacion) {
+    try {
+        const superheroExistente = await Superhero.findOne({
+            nombreSuperheroe,
+        });
+        if (!superheroExistente) {
+            console.log("Superheroe no encontrado, no se puede actualizar");
+            return;
+        } else {
+            await Superhero.updateOne({ nombreSuperheroe }, operacion);
+            console.log("Se actualizó correctamente", nombreSuperheroe);
+        }
+    } catch (error) {
+        console.error("Error al actualizar el superheroe", error);
+        throw error;
+    }
 }
 
-// método para eliminar un superhéroe específico de la base de datos
+// Eliminar un superheroe por nombre
 async function deleteSuperhero(nombreSuperheroe) {
-    const resultado = await Superhero.deleteOne({
-        nombreSuperheroe: nombreSuperheroe,
-    });
-    console.log("Resultado de la eliminación:", resultado);
-
-    await mongoose.connection.close();
+    try {
+        const superheroExistente = await Superhero.findOne({
+            nombreSuperheroe,
+        });
+        if (!superheroExistente) {
+            console.log("Superheroe no encontrado, nada que eliminar");
+            return;
+        } else {
+            await Superhero.deleteOne({ nombreSuperheroe });
+            console.log(
+                "Superheroe",
+                nombreSuperheroe,
+                "fue eliminado de la colección",
+            );
+        }
+    } catch (error) {
+        console.error("Error al eliminar el superheroe", error);
+        throw error;
+    }
 }
 
-// método para encontrar superhéroes por su planeta de origen
-async function findSuperheros(planetaOrigen) {
-    const heroes = await Superhero.find({ planetaOrigen: planetaOrigen });
-    console.log("Superhéroes encontrados:", heroes);
+// Buscar superheros cuyo planeta de origen sea la tierra
+async function findSuperheroByPlaneta(planeta) {
+    try {
+        const heroesEncontrados = await Superhero.find({
+            planetaOrigen: planeta,
+        });
+        if (heroesEncontrados.length === 0) {
+            console.log(
+                "No se encontró ningún superheroe, cuyo planeta de origen es",
+                planeta,
+            );
+        } else {
+            console.log("Superheroes encontrados:", heroesEncontrados);
+        }
+    } catch (error) {
+        console.error("Error al buscar los superheroes", error);
+        throw error;
+    }
 }
+
+InitApp();
